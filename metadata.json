@@ -1,0 +1,6 @@
+{
+  "name": "PrismCam Android",
+  "description": "High-performance camera web app for Android Chrome with 4K photo capture, HD video recording, hardware zoom, flash, and direct save to phone storage.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
