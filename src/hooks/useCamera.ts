@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AspectRatio, CameraCapabilities, CameraSettings, MediaItem } from '../types';
-import { applyFilterToContext } from '../services/filters';
+import { applyFilterToContext, applyLiveTuningToContext, applySnapchatBeautyToCanvas } from '../services/filters';
 import { playRecordStartSound, playRecordStopSound, playShutterSound, triggerHaptic } from '../services/audioFeedback';
 import { downloadMediaToPhone, saveMediaToDb } from '../services/storage';
 import { createSimulatedCameraStream } from '../services/cameraSimulator';
@@ -395,17 +395,55 @@ interface ExtendedTrackCapabilities extends MediaTrackCapabilities {
       ctx.scale(-1, 1);
     }
 
+    const isBeautyOn = settings.beauty?.enabled;
+
+    // Apply manual adjustments and beauty filters
+    const tuning = {
+      brightness: settings.brightness,
+      contrast: settings.contrast,
+      saturation: settings.saturation,
+      warmth: settings.warmth,
+    };
+
     // Apply digital zoom if hardware zoom isn't native or if zoomed in
     if (!capabilities.hasZoom && zoomLevel > 1) {
       const cropW = videoWidth / zoomLevel;
       const cropH = videoHeight / zoomLevel;
       const startX = (videoWidth - cropW) / 2;
       const startY = (videoHeight - cropH) / 2;
-      applyFilterToContext(ctx, settings.activeFilterId);
+
+      applyLiveTuningToContext(ctx, settings.beauty, tuning, settings.activeFilterId);
       ctx.drawImage(video, startX, startY, cropW, cropH, 0, 0, videoWidth, videoHeight);
     } else {
-      applyFilterToContext(ctx, settings.activeFilterId);
+      applyLiveTuningToContext(ctx, settings.beauty, tuning, settings.activeFilterId);
       ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+    }
+
+    // Apply manual vignette effect if active
+    if (settings.vignette > 0) {
+      ctx.save();
+      const radius = Math.max(videoWidth, videoHeight) * 0.75;
+      const vignetteGrad = ctx.createRadialGradient(
+        videoWidth / 2,
+        videoHeight / 2,
+        radius * 0.3,
+        videoWidth / 2,
+        videoHeight / 2,
+        radius
+      );
+      const opacity = (settings.vignette / 100) * 0.85;
+      vignetteGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vignetteGrad.addColorStop(0.65, `rgba(0, 0, 0, ${opacity * 0.3})`);
+      vignetteGrad.addColorStop(1, `rgba(0, 0, 0, ${opacity})`);
+
+      ctx.fillStyle = vignetteGrad;
+      ctx.fillRect(0, 0, videoWidth, videoHeight);
+      ctx.restore();
+    }
+
+    // Apply full multi-pass Snapchat beauty processing (soft-light smoothing, angel bloom, blush)
+    if (isBeautyOn && settings.beauty) {
+      applySnapchatBeautyToCanvas(rawCanvas, settings.beauty);
     }
 
     // Apply aspect ratio crop

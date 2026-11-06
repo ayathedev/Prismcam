@@ -17,7 +17,12 @@ import {
   CircleDot,
   Eye,
   Check,
-  Copy,
+  Heart,
+  Droplets,
+  Wand2,
+  Sun,
+  Power,
+  Focus,
 } from 'lucide-react';
 import { MediaItem } from '../types';
 import {
@@ -27,6 +32,7 @@ import {
   ImageAdjustments,
   renderEditedImageToCanvas,
 } from '../services/imageEditor';
+import { BEAUTY_PRESETS, BeautyPreset } from '../services/filters';
 import { downloadMediaToPhone, saveMediaToDb, shareMediaToPhone } from '../services/storage';
 import { triggerHaptic } from '../services/audioFeedback';
 
@@ -39,7 +45,7 @@ interface ImageEditorModalProps {
   showToast: (msg: string) => void;
 }
 
-type EditorTab = 'tune' | 'filters' | 'crop';
+type EditorTab = 'tune' | 'filters' | 'beauty' | 'crop';
 type TuneProperty = 'brightness' | 'contrast' | 'saturation' | 'warmth' | 'exposure' | 'vignette';
 
 export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
@@ -280,8 +286,8 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col text-white animate-in fade-in duration-150 select-none">
-      {/* Top Header */}
-      <header className="flex items-center justify-between px-3 pt-safe pb-2 bg-gradient-to-b from-black via-black/80 to-transparent border-b border-white/10">
+      {/* Top Header Overlay */}
+      <header className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-3 pt-safe pb-3 bg-black/40 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -305,21 +311,6 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2">
-          {/* Press and Hold to Compare Original */}
-          <button
-            onMouseDown={() => setIsComparing(true)}
-            onMouseUp={() => setIsComparing(false)}
-            onTouchStart={() => setIsComparing(true)}
-            onTouchEnd={() => setIsComparing(false)}
-            className={`min-h-[38px] px-3 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
-              isComparing ? 'bg-amber-400 text-black shadow-lg scale-105' : 'bg-white/10 text-white/80 hover:bg-white/20'
-            }`}
-            title="Press & hold to compare original"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{isComparing ? 'Original' : 'Compare'}</span>
-          </button>
-
           {/* Reset All */}
           <button
             onClick={handleReset}
@@ -353,11 +344,32 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
       </header>
 
       {/* Main Canvas Preview Area */}
-      <div className="relative flex-1 bg-neutral-950 flex items-center justify-center p-3 overflow-hidden">
+      <div 
+        className="relative flex-1 bg-neutral-950 flex items-center justify-center p-3 overflow-hidden cursor-pointer"
+        onMouseDown={() => setIsComparing(true)}
+        onMouseUp={() => setIsComparing(false)}
+        onMouseLeave={() => setIsComparing(false)}
+        onTouchStart={() => setIsComparing(true)}
+        onTouchEnd={() => setIsComparing(false)}
+      >
         <canvas
           ref={canvasRef}
           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-75"
         />
+
+        {/* Floating Compare Button */}
+        <div className="absolute top-4 right-4 z-20">
+          <div
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 backdrop-blur-md border transition-all duration-200 ${
+              isComparing 
+                ? 'bg-amber-400 text-black border-amber-300 shadow-lg scale-110' 
+                : 'bg-black/60 text-white border-white/20'
+            }`}
+          >
+            <Eye className={`w-4 h-4 ${isComparing ? 'animate-pulse' : ''}`} />
+            <span>{isComparing ? 'ORIGINAL' : 'HOLD TO COMPARE'}</span>
+          </div>
+        </div>
 
         {/* Loading Spinner */}
         {!imageLoaded && (
@@ -376,16 +388,18 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
           </div>
         )}
 
-        {/* Comparing Badge */}
-        {isComparing && (
-          <div className="absolute top-4 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-xs font-mono font-bold text-amber-300 shadow-xl animate-pulse">
-            SHOWING ORIGINAL
+        {/* Comparing Hint (Bottom) */}
+        {!isComparing && imageLoaded && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-50 animate-bounce">
+            <span className="text-[10px] font-medium tracking-widest text-white/80 uppercase px-2 py-1 rounded bg-black/40">
+              Long press image to compare
+            </span>
           </div>
         )}
       </div>
 
-      {/* Editing Controls Deck */}
-      <div className="bg-neutral-900 border-t border-white/10 px-3 pt-3 pb-safe flex flex-col gap-3">
+      {/* Editing Controls Deck Overlay */}
+      <div className="absolute bottom-0 inset-x-0 z-40 bg-neutral-900/60 backdrop-blur-xl border-t border-white/10 px-3 pt-3 pb-safe flex flex-col gap-3">
         {/* Dynamic Controls based on Active Tab */}
         {activeTab === 'tune' && (
           <div className="flex flex-col gap-2.5">
@@ -564,8 +578,248 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
           </div>
         )}
 
-        {/* Primary Bottom Navigation Bar: Tune | Filters | Crop */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+        {activeTab === 'beauty' && (
+          <div className="flex flex-col gap-3">
+            {/* Presets Row */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-white/50 px-1 flex items-center gap-1">
+                <Wand2 className="w-3 h-3 text-pink-400" />
+                Select Beauty Look
+              </span>
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {BEAUTY_PRESETS.map((preset: BeautyPreset) => {
+                  const isSelected = adjustments.beautyPreset === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => {
+                        triggerHaptic(haptics, 12);
+                        setAdjustments((prev) => ({
+                          ...prev,
+                          beautyPreset: preset.id,
+                          beautySmooth: preset.smoothLevel,
+                          beautyRosy: preset.rosyLevel,
+                          beautyGlow: preset.glowLevel,
+                          beautyBrighten: preset.brightenLevel,
+                          beautySlim: preset.slimLevel,
+                          beautyEnlargeEye: preset.enlargeEyeLevel,
+                          beautyPortraitDepth: preset.portraitDepthLevel,
+                        }));
+                      }}
+                      className={`min-h-[38px] px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap flex items-center gap-2 transition-all ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold shadow-lg scale-105 border border-white/30'
+                          : 'bg-white/10 text-white/80 hover:bg-white/20'
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full border border-black/30 shrink-0"
+                        style={{ backgroundColor: preset.previewColor }}
+                      />
+                      <span>{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Look Description */}
+              {adjustments.beautyPreset !== 'none' && adjustments.beautyPreset !== 'custom' && (
+                <p className="text-[11px] text-pink-300/80 italic px-1">
+                  {BEAUTY_PRESETS.find((p) => p.id === adjustments.beautyPreset)?.description}
+                </p>
+              )}
+            </div>
+
+            {/* Beauty Sliders */}
+            <div className="flex flex-col gap-2.5 px-1 max-h-[280px] overflow-y-auto pr-1 py-1 custom-scrollbar">
+
+              {/* Skin Smoothing */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Droplets className="w-3.5 h-3.5 text-pink-300" />
+                    <span>Skin Smoothing</span>
+                  </span>
+                  <span className="font-mono text-pink-400 font-bold">{adjustments.beautySmooth}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautySmooth}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautySmooth: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                />
+              </div>
+
+              {/* Rosy Blush */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/40" />
+                    <span>Rosy Blush Tone</span>
+                  </span>
+                  <span className="font-mono text-rose-400 font-bold">{adjustments.beautyRosy}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautyRosy}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautyRosy: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                />
+              </div>
+
+              {/* Dream Glow */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Dream Glow Diffusion</span>
+                  </span>
+                  <span className="font-mono text-amber-300 font-bold">{adjustments.beautyGlow}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautyGlow}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautyGlow: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
+              </div>
+
+              {/* Skin Brighten */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5 text-sky-300" />
+                    <span>Skin Brighten & Clarity</span>
+                  </span>
+                  <span className="font-mono text-sky-300 font-bold">{adjustments.beautyBrighten}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautyBrighten}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautyBrighten: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-sky-400"
+                />
+              </div>
+
+              {/* Face Slimming */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Power className="w-3.5 h-3.5 text-indigo-300 rotate-180" />
+                    <span>Face Slimming</span>
+                  </span>
+                  <span className="font-mono text-indigo-300 font-bold">{adjustments.beautySlim}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautySlim}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautySlim: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+                />
+              </div>
+
+              {/* Big Eyes */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Make Eyes Bigger</span>
+                  </span>
+                  <span className="font-mono text-emerald-300 font-bold">{adjustments.beautyEnlargeEye}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautyEnlargeEye}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautyEnlargeEye: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                />
+              </div>
+
+              {/* Portrait Depth / Bokeh */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-white/90 flex items-center gap-1.5">
+                    <Focus className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Portrait Depth (Bokeh)</span>
+                  </span>
+                  <span className="font-mono text-blue-400 font-bold">{adjustments.beautyPortraitDepth}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={adjustments.beautyPortraitDepth}
+                  onChange={(e) => {
+                    triggerHaptic(haptics, 4);
+                    setAdjustments((prev) => ({
+                      ...prev,
+                      beautyPreset: 'custom',
+                      beautyPortraitDepth: parseInt(e.target.value, 10),
+                    }));
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Primary Bottom Navigation Bar: Tune | Filters | Beauty | Crop */}
+        <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-white/10">
           <button
             onClick={() => {
               triggerHaptic(haptics, 10);
@@ -578,7 +832,7 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span className="text-[11px]">Tune</span>
+            <span className="text-[10px]">Tune</span>
           </button>
 
           <button
@@ -593,7 +847,22 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span className="text-[11px]">Filters</span>
+            <span className="text-[10px]">Filters</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic(haptics, 10);
+              setActiveTab('beauty');
+            }}
+            className={`min-h-[44px] py-2 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all ${
+              activeTab === 'beauty'
+                ? 'bg-pink-500/25 text-pink-400 font-bold border border-pink-400/50'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            <Heart className="w-4 h-4" />
+            <span className="text-[10px]">Beauty</span>
           </button>
 
           <button
@@ -608,7 +877,7 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
             }`}
           >
             <Crop className="w-4 h-4" />
-            <span className="text-[11px]">Crop & Rotate</span>
+            <span className="text-[10px]">Crop</span>
           </button>
         </div>
 

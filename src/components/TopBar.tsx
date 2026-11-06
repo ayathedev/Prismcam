@@ -9,6 +9,7 @@ import {
   Maximize2,
   Minimize2,
   HardDriveDownload,
+  Sparkles,
 } from 'lucide-react';
 import { AspectRatio, CameraSettings, FlashMode, GridType } from '../types';
 import { triggerHaptic } from '../services/audioFeedback';
@@ -25,6 +26,7 @@ interface TopBarProps {
   torchActive: boolean;
   onToggleTorch: () => void;
   totalMediaCount: number;
+  onToggleBeauty?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -37,6 +39,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   torchActive,
   onToggleTorch,
   totalMediaCount,
+  onToggleBeauty,
 }) => {
   const [activeMenu, setActiveMenu] = useState<'flash' | 'ratio' | 'timer' | null>(null);
 
@@ -72,7 +75,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="relative z-30 w-full bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-safe px-3 pb-2 transition-all">
+    <header className="relative z-30 w-full bg-gradient-to-b from-black/60 via-black/20 to-transparent pt-safe px-3 pb-2 transition-all">
       {/* Top Bar Row */}
       <div className="flex items-center justify-between text-white/90">
         {/* Flash Toggle */}
@@ -222,6 +225,23 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Beauty Retouch Quick Toggle */}
+        <button
+          onClick={() => {
+            triggerHaptic(settings.haptics, 12);
+            onToggleBeauty?.();
+          }}
+          className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full p-2 transition-colors ${
+            settings.beauty?.enabled
+              ? 'text-pink-400 bg-pink-500/20'
+              : 'text-white/80 hover:bg-white/10 active:bg-white/20'
+          }`}
+          title="Beauty & Retouch Controls"
+          aria-label="Toggle Beauty Panel"
+        >
+          <Sparkles className="w-5 h-5" />
+        </button>
 
         {/* Grid Overlay Toggle */}
         <button

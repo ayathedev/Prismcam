@@ -159,9 +159,9 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col text-white animate-in fade-in duration-150 select-none">
-      {/* Top Header */}
-      <header className="flex items-center justify-between px-3 pt-safe pb-2 bg-gradient-to-b from-black via-black/80 to-transparent border-b border-white/10">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex flex-col text-white animate-in fade-in duration-150 select-none">
+      {/* Top Header Overlay */}
+      <header className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-3 pt-safe pb-3 bg-black/40 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -496,9 +496,9 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
             ))}
           </div>
 
-          {/* Primary Action Buttons Bar */}
+          {/* Primary Action Buttons Bar Overlay */}
           {currentItem && (
-            <div className="bg-neutral-900 border-t border-white/10 px-4 py-3 pb-safe flex items-center justify-between">
+            <div className="absolute bottom-0 inset-x-0 z-40 bg-neutral-900/60 backdrop-blur-xl border-t border-white/10 px-4 py-3 pb-safe flex items-center justify-between">
               {/* Info Button */}
               <button
                 onClick={() => {
@@ -578,7 +578,7 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
 
       {/* Multi-Selection Bottom Action Bar */}
       {isSelectionMode && selectedIds.size > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-50 bg-neutral-900 border-t border-amber-400/40 p-4 pb-safe flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-150">
+        <div className="fixed bottom-0 inset-x-0 z-50 bg-neutral-900/60 backdrop-blur-xl border-t border-amber-400/40 p-4 pb-safe flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom duration-150">
           <span className="text-xs font-bold text-white">
             {selectedIds.size} item{selectedIds.size > 1 ? 's' : ''} selected
           </span>

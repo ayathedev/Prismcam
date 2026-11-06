@@ -11,6 +11,7 @@ import {
   Trash2,
   Smartphone,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { CameraSettings, ResolutionMode, StorageStats } from '../types';
 import { clearAllMediaFromDb, formatBytes } from '../services/storage';
@@ -49,7 +50,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center animate-in fade-in duration-200 select-none">
-      <div className="w-full max-w-lg bg-neutral-900 border border-white/15 rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl text-white flex flex-col gap-5">
+      <div className="w-full max-w-lg bg-neutral-900/60 backdrop-blur-2xl border border-white/15 rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl text-white flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
@@ -134,6 +135,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span>Clear Cache</span>
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* Beauty & Retouch Settings */}
+        <section className="flex flex-col gap-2.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-pink-400">
+            Beauty & Skin Retouch
+          </span>
+          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-pink-500/20 text-pink-400 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white">Live Beauty Retouch</h4>
+                  <p className="text-xs text-white/50">
+                    Smooths skin, adds rosy tone and diffusion glow on camera
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  triggerHaptic(settings.haptics, 10);
+                  onUpdateSettings({
+                    beauty: {
+                      ...settings.beauty,
+                      enabled: !settings.beauty.enabled,
+                    },
+                  });
+                }}
+                className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                  settings.beauty.enabled ? 'bg-pink-500' : 'bg-white/20'
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    settings.beauty.enabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {settings.beauty.enabled && (
+              <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/70">Default Skin Smoothing</span>
+                  <span className="font-mono text-pink-400 font-bold">{settings.beauty.smoothLevel}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.beauty.smoothLevel}
+                  onChange={(e) => {
+                    onUpdateSettings({
+                      beauty: {
+                        ...settings.beauty,
+                        smoothLevel: parseInt(e.target.value, 10),
+                      },
+                    });
+                  }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                />
+              </div>
+            )}
           </div>
         </section>
 

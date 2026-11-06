@@ -364,9 +364,9 @@ export const FrameScrubberModal: React.FC<FrameScrubberModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col text-white animate-in fade-in duration-200 select-none">
-      {/* Top Header */}
-      <header className="flex items-center justify-between px-3 pt-safe pb-2 bg-gradient-to-b from-black via-black/80 to-transparent border-b border-white/10">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex flex-col text-white animate-in fade-in duration-200 select-none">
+      {/* Top Header Overlay */}
+      <header className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-3 pt-safe pb-3 bg-black/40 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -472,8 +472,8 @@ export const FrameScrubberModal: React.FC<FrameScrubberModalProps> = ({
         )}
       </div>
 
-      {/* Frame Scrubber Controls Deck */}
-      <div className="bg-neutral-900 border-t border-white/10 px-3 pt-3 pb-safe flex flex-col gap-3">
+      {/* Frame Scrubber Controls Deck Overlay */}
+      <div className="absolute bottom-0 inset-x-0 z-40 bg-neutral-900/60 backdrop-blur-xl border-t border-white/10 px-3 pt-3 pb-safe flex flex-col gap-3">
         {/* Visual Filmstrip Timeline Scrubber */}
         <div className="relative flex flex-col gap-1">
           <div className="flex items-center justify-between text-[11px] text-white/50 px-1">

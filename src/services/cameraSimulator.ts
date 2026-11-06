@@ -107,28 +107,118 @@ export function createSimulatedCameraStream(
       ctx.arc(width * 0.5, height * 0.45, 300, 0, Math.PI * 2);
       ctx.fill();
 
-      // Human portrait silhouette
+      // Human portrait with facial features for testing beauty filters
       const centerX = width * 0.5 + Math.sin(t * 0.8) * 4;
       const headY = height * 0.38 + Math.cos(t * 0.8) * 3;
 
-      // Head
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.arc(centerX, headY, 80, 0, Math.PI * 2);
-      ctx.fill();
-
       // Torso / Shoulders
-      ctx.fillStyle = '#d97706';
+      ctx.fillStyle = '#1e293b';
       ctx.beginPath();
-      ctx.ellipse(centerX, headY + 160, 160, 100, 0, 0, Math.PI * 2);
+      ctx.ellipse(centerX, headY + 175, 180, 110, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Subtle breathing motion ring
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 2;
+      // Neck
+      ctx.fillStyle = '#fbcfe8';
       ctx.beginPath();
-      ctx.arc(centerX, headY, 95 + Math.sin(t * 2) * 4, 0, Math.PI * 2);
+      ctx.roundRect(centerX - 24, headY + 60, 48, 60, 10);
+      ctx.fill();
+
+      // Hair (Back layer)
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.arc(centerX, headY - 10, 92, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Face base (Warm natural skin tone)
+      const skinGrad = ctx.createLinearGradient(centerX, headY - 80, centerX, headY + 80);
+      skinGrad.addColorStop(0, '#fed7aa');
+      skinGrad.addColorStop(0.7, '#fcd34d');
+      skinGrad.addColorStop(1, '#fde68a');
+      ctx.fillStyle = skinGrad;
+      ctx.beginPath();
+      ctx.ellipse(centerX, headY, 72, 85, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hair (Front bangs/sides)
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.moveTo(centerX - 72, headY - 20);
+      ctx.quadraticCurveTo(centerX - 40, headY - 85, centerX, headY - 65);
+      ctx.quadraticCurveTo(centerX + 40, headY - 85, centerX + 72, headY - 20);
+      ctx.quadraticCurveTo(centerX + 60, headY - 50, centerX, headY - 50);
+      ctx.quadraticCurveTo(centerX - 60, headY - 50, centerX - 72, headY - 20);
+      ctx.fill();
+
+      // Cheeks (Subtle peach natural blush)
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(centerX - 38, headY + 16, 20, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(centerX + 38, headY + 16, 20, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes (Almond shape)
+      const eyeY = headY - 2;
+      ctx.fillStyle = '#ffffff';
+      // Left eye
+      ctx.beginPath();
+      ctx.ellipse(centerX - 28, eyeY, 14, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Right eye
+      ctx.beginPath();
+      ctx.ellipse(centerX + 28, eyeY, 14, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pupils (Deep espresso)
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.arc(centerX - 28, eyeY, 6, 0, Math.PI * 2);
+      ctx.arc(centerX + 28, eyeY, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sparkling Catchlights (Snapchat sparkle)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(centerX - 26, eyeY - 2, 2.5, 0, Math.PI * 2);
+      ctx.arc(centerX + 30, eyeY - 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyelashes & Brows
+      ctx.strokeStyle = '#292524';
+      ctx.lineWidth = 2.5;
+      // Eyebrows
+      ctx.beginPath();
+      ctx.moveTo(centerX - 42, eyeY - 14);
+      ctx.quadraticCurveTo(centerX - 28, eyeY - 18, centerX - 14, eyeY - 13);
+      ctx.moveTo(centerX + 14, eyeY - 13);
+      ctx.quadraticCurveTo(centerX + 28, eyeY - 18, centerX + 42, eyeY - 14);
       ctx.stroke();
+
+      // Lips (Rose tint)
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath();
+      // Upper lip
+      ctx.moveTo(centerX - 18, headY + 48);
+      ctx.quadraticCurveTo(centerX - 8, headY + 42, centerX, headY + 45);
+      ctx.quadraticCurveTo(centerX + 8, headY + 42, centerX + 18, headY + 48);
+      // Lower lip
+      ctx.quadraticCurveTo(centerX, headY + 60, centerX - 18, headY + 48);
+      ctx.fill();
+
+      // Lip highlight sheen
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(centerX, headY + 52, 6, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cheekbone highlight (Snapchat Angel Glow point)
+      const glowGrad = ctx.createRadialGradient(centerX - 35, headY + 5, 2, centerX - 35, headY + 5, 22);
+      glowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      glowGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(centerX - 35, headY + 5, 22, 0, Math.PI * 2);
+      ctx.arc(centerX + 35, headY + 5, 22, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // Live Simulator Watermark / Timestamp

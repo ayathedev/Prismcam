@@ -4,13 +4,14 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { CameraSettings, CameraMode, MediaItem, StorageStats } from './types';
+import { CameraSettings, CameraMode, MediaItem, StorageStats, DEFAULT_BEAUTY_SETTINGS } from './types';
 import { useCamera } from './hooks/useCamera';
 import { getAllMediaFromDb, getStorageStats } from './services/storage';
 import { TopBar } from './components/TopBar';
 import { Viewfinder } from './components/Viewfinder';
 import { CameraControls } from './components/CameraControls';
 import { ProPanel } from './components/ProPanel';
+import { BeautyPanel } from './components/BeautyPanel';
 import { GalleryModal } from './components/GalleryModal';
 import { SettingsModal } from './components/SettingsModal';
 import { PermissionPrompt } from './components/PermissionPrompt';
@@ -29,6 +30,12 @@ const DEFAULT_SETTINGS: CameraSettings = {
   mirrorFrontCamera: true,
   activeFilterId: 'none',
   selectedDeviceId: '',
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  warmth: 0,
+  vignette: 0,
+  beauty: DEFAULT_BEAUTY_SETTINGS,
 };
 
 export default function App() {
@@ -37,7 +44,15 @@ export default function App() {
     try {
       const stored = localStorage.getItem('prismcam_settings');
       if (stored) {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          beauty: {
+            ...DEFAULT_BEAUTY_SETTINGS,
+            ...(parsed.beauty || {}),
+          },
+        };
       }
     } catch {
       // ignore
@@ -50,6 +65,7 @@ export default function App() {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProPanelOpen, setIsProPanelOpen] = useState(false);
+  const [isBeautyPanelOpen, setIsBeautyPanelOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastAction, setToastAction] = useState<(() => void) | undefined>(undefined);
@@ -190,7 +206,7 @@ export default function App() {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-black flex flex-col justify-between select-none touch-none">
+    <main className="relative w-screen h-screen overflow-hidden bg-black select-none touch-none">
       {/* Toast Notification */}
       <Toast
         message={toastMessage}
@@ -198,44 +214,20 @@ export default function App() {
         actionLabel={toastActionLabel}
       />
 
-      {/* Top Bar Controls */}
-      <TopBar
-        settings={settings}
-        onUpdateSettings={updateSettings}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenGallery={() => setIsGalleryOpen(true)}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
-        hasTorch={capabilities.hasTorch}
-        torchActive={torchActive}
-        onToggleTorch={toggleTorch}
-        totalMediaCount={mediaItems.length}
-      />
-
-      {/* Main Viewfinder Frame */}
-      <div className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden">
-        {/* Simulator mode banner */}
-        {isSimulator && (
-          <div className="absolute top-3 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
-            <button
-              onClick={() => {
-                showToast('Connecting physical camera...');
-                startCamera();
-              }}
-              className="pointer-events-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-400 text-black text-xs font-bold shadow-2xl backdrop-blur-md active:scale-95 transition-all"
-              title="Tap to attempt physical camera connection"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Simulator Feed · Tap to Connect Physical Camera</span>
-            </button>
-          </div>
-        )}
-
+      {/* Main Viewfinder Frame - Fullscreen background */}
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden z-0">
         <Viewfinder
           videoRef={videoRef}
           aspectRatio={settings.aspectRatio}
           gridType={settings.gridType}
           filterId={settings.activeFilterId}
+          beauty={settings.beauty}
+          brightness={settings.brightness}
+          contrast={settings.contrast}
+          saturation={settings.saturation}
+          warmth={settings.warmth}
+          vignette={settings.vignette}
+          isBeautyActive={mode === 'beauty' || settings.beauty.enabled}
           isShutterActive={isShutterActive}
           screenFlash={screenFlash}
           countdown={countdown}
@@ -246,6 +238,14 @@ export default function App() {
           onPinchZoom={handlePinchZoom}
         />
       </div>
+
+      {/* Beauty Retouch Panel Drawer */}
+      <BeautyPanel
+        isOpen={isBeautyPanelOpen}
+        onClose={() => setIsBeautyPanelOpen(false)}
+        settings={settings}
+        onUpdateSettings={updateSettings}
+      />
 
       {/* Pro Panel Drawer */}
       <ProPanel
@@ -263,35 +263,111 @@ export default function App() {
         }}
       />
 
-      {/* Bottom Main Controls */}
-      <CameraControls
-        mode={mode}
-        onChangeMode={(newMode) => {
-          setMode(newMode);
-          if (newMode === 'pro') {
-            setIsProPanelOpen(true);
-          } else {
-            setIsProPanelOpen(false);
-          }
-        }}
-        isRecording={isRecording}
-        isRecordingPaused={isRecordingPaused}
-        recordingSeconds={recordingSeconds}
-        onTakePhoto={takePhoto}
-        onStartRecording={startRecording}
-        onPauseResumeRecording={pauseResumeRecording}
-        onStopRecording={stopRecording}
-        onFlipCamera={flipCamera}
-        lastMediaItem={mediaItems[0] || null}
-        totalMediaCount={mediaItems.length}
-        onOpenGallery={() => setIsGalleryOpen(true)}
-        zoomLevel={zoomLevel}
-        onZoomChange={setZoom}
-        capabilities={capabilities}
-        haptics={settings.haptics}
-        onToggleProPanel={() => setIsProPanelOpen(!isProPanelOpen)}
-        isProPanelOpen={isProPanelOpen}
-      />
+      {/* Overlay UI Controls */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between">
+        {/* Top Bar Controls */}
+        <div className="pointer-events-auto">
+          <TopBar
+            settings={settings}
+            onUpdateSettings={updateSettings}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenGallery={() => setIsGalleryOpen(true)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
+            hasTorch={capabilities.hasTorch}
+            torchActive={torchActive}
+            onToggleTorch={toggleTorch}
+            totalMediaCount={mediaItems.length}
+            onToggleBeauty={() => {
+              const nextState = !isBeautyPanelOpen;
+              setIsBeautyPanelOpen(nextState);
+              if (nextState) {
+                setIsProPanelOpen(false);
+                if (!settings.beauty.enabled) {
+                  updateSettings({
+                    beauty: { ...settings.beauty, enabled: true },
+                  });
+                }
+              }
+            }}
+          />
+        </div>
+
+        {/* Simulator mode banner */}
+        {isSimulator && (
+          <div className="absolute top-16 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
+            <button
+              onClick={() => {
+                showToast('Connecting physical camera...');
+                startCamera();
+              }}
+              className="pointer-events-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-400 text-black text-xs font-bold shadow-2xl backdrop-blur-md active:scale-95 transition-all"
+              title="Tap to attempt physical camera connection"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Simulator Feed · Tap to Connect Physical Camera</span>
+            </button>
+          </div>
+        )}
+
+        {/* Bottom Main Controls */}
+        <div className="pointer-events-auto">
+          <CameraControls
+            mode={mode}
+            onChangeMode={(newMode) => {
+              setMode(newMode);
+              if (newMode === 'beauty') {
+                setIsBeautyPanelOpen(true);
+                setIsProPanelOpen(false);
+                if (!settings.beauty.enabled) {
+                  updateSettings({
+                    beauty: { ...settings.beauty, enabled: true },
+                  });
+                }
+              } else if (newMode === 'pro') {
+                setIsProPanelOpen(true);
+                setIsBeautyPanelOpen(false);
+              } else {
+                setIsProPanelOpen(false);
+                setIsBeautyPanelOpen(false);
+              }
+            }}
+            isRecording={isRecording}
+            isRecordingPaused={isRecordingPaused}
+            recordingSeconds={recordingSeconds}
+            onTakePhoto={takePhoto}
+            onStartRecording={startRecording}
+            onPauseResumeRecording={pauseResumeRecording}
+            onStopRecording={stopRecording}
+            onFlipCamera={flipCamera}
+            lastMediaItem={mediaItems[0] || null}
+            totalMediaCount={mediaItems.length}
+            onOpenGallery={() => setIsGalleryOpen(true)}
+            zoomLevel={zoomLevel}
+            onZoomChange={setZoom}
+            capabilities={capabilities}
+            haptics={settings.haptics}
+            onToggleProPanel={() => {
+              setIsProPanelOpen(!isProPanelOpen);
+              if (!isProPanelOpen) setIsBeautyPanelOpen(false);
+            }}
+            isProPanelOpen={isProPanelOpen}
+            onToggleBeautyPanel={() => {
+              const nextState = !isBeautyPanelOpen;
+              setIsBeautyPanelOpen(nextState);
+              if (nextState) {
+                setIsProPanelOpen(false);
+                if (!settings.beauty.enabled) {
+                  updateSettings({
+                    beauty: { ...settings.beauty, enabled: true },
+                  });
+                }
+              }
+            }}
+            isBeautyPanelOpen={isBeautyPanelOpen}
+          />
+        </div>
+      </div>
 
       {/* Gallery Modal */}
       <GalleryModal

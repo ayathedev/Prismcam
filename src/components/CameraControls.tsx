@@ -29,6 +29,8 @@ interface CameraControlsProps {
   haptics: boolean;
   onToggleProPanel: () => void;
   isProPanelOpen: boolean;
+  onToggleBeautyPanel: () => void;
+  isBeautyPanelOpen: boolean;
 }
 
 export const CameraControls: React.FC<CameraControlsProps> = ({
@@ -51,6 +53,8 @@ export const CameraControls: React.FC<CameraControlsProps> = ({
   haptics,
   onToggleProPanel,
   isProPanelOpen,
+  onToggleBeautyPanel,
+  isBeautyPanelOpen,
 }) => {
   const [showZoomSlider, setShowZoomSlider] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -71,7 +75,7 @@ export const CameraControls: React.FC<CameraControlsProps> = ({
   };
 
   const handleShutterClick = () => {
-    if (mode === 'photo' || mode === 'pro') {
+    if (mode === 'photo' || mode === 'pro' || mode === 'beauty') {
       onTakePhoto();
     } else if (mode === 'video') {
       if (isRecording) {
@@ -89,7 +93,7 @@ export const CameraControls: React.FC<CameraControlsProps> = ({
   if (!zoomPresets.includes(1)) zoomPresets.unshift(1);
 
   return (
-    <footer className="relative z-30 w-full bg-gradient-to-t from-black via-black/95 to-transparent pb-safe pt-2 px-4 select-none flex flex-col items-center gap-3">
+    <footer className="relative z-30 w-full bg-gradient-to-t from-black/60 via-black/20 to-transparent pb-safe pt-2 px-4 select-none flex flex-col items-center gap-3">
       {/* Zoom Controls Bar */}
       {!isRecording && (
         <div className="flex flex-col items-center gap-1.5 w-full max-w-xs">
@@ -199,6 +203,21 @@ export const CameraControls: React.FC<CameraControlsProps> = ({
             }`}
           >
             Video
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic(haptics, 12);
+              onChangeMode('beauty');
+              onToggleBeautyPanel();
+            }}
+            className={`transition-colors min-h-[36px] px-2 flex items-center gap-1.5 ${
+              mode === 'beauty' || isBeautyPanelOpen
+                ? 'text-pink-400 font-bold border-b-2 border-pink-400 pb-0.5'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+            <span>Beauty</span>
           </button>
           <button
             onClick={() => {

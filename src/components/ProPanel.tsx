@@ -2,7 +2,17 @@ import React from 'react';
 import { CameraCapabilities, CameraSettings } from '../types';
 import { CAMERA_FILTERS, CameraFilter } from '../services/filters';
 import { triggerHaptic } from '../services/audioFeedback';
-import { SunMedium, X, Sparkles, HardDriveDownload } from 'lucide-react';
+import { 
+  SunMedium, 
+  X, 
+  Sparkles, 
+  HardDriveDownload, 
+  Contrast, 
+  Droplet, 
+  Flame, 
+  CircleDot,
+  RotateCcw
+} from 'lucide-react';
 
 interface ProPanelProps {
   isOpen: boolean;
@@ -31,7 +41,7 @@ export const ProPanel: React.FC<ProPanelProps> = ({
 
   return (
     <div className="absolute inset-x-0 bottom-36 z-40 px-3 select-none animate-in fade-in slide-in-from-bottom-4 duration-200">
-      <div className="w-full max-w-md mx-auto bg-neutral-900/95 backdrop-blur-xl border border-white/15 rounded-3xl p-4 shadow-2xl flex flex-col gap-4 text-white">
+      <div className="w-full max-w-md mx-auto bg-neutral-950/40 backdrop-blur-3xl border border-white/20 rounded-3xl p-4 shadow-2xl flex flex-col gap-4 text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <div className="flex items-center gap-2">
@@ -87,10 +97,14 @@ export const ProPanel: React.FC<ProPanelProps> = ({
 
         {/* Live Filter Presets */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-white/80">Color Grading & Tone</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-white/80">Color Grading & Tone</span>
+            <span className="text-[10px] text-pink-400 font-semibold">Includes Beauty Filters</span>
+          </div>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             {CAMERA_FILTERS.map((f: CameraFilter) => {
               const isSelected = settings.activeFilterId === f.id;
+              const isBeauty = f.category === 'beauty';
               return (
                 <button
                   key={f.id}
@@ -100,7 +114,11 @@ export const ProPanel: React.FC<ProPanelProps> = ({
                   }}
                   className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                     isSelected
-                      ? 'bg-amber-400 text-black font-bold shadow-md scale-105'
+                      ? isBeauty
+                        ? 'bg-pink-500 text-white font-bold shadow-md scale-105'
+                        : 'bg-amber-400 text-black font-bold shadow-md scale-105'
+                      : isBeauty
+                      ? 'bg-pink-500/15 text-pink-300 border border-pink-500/30 hover:bg-pink-500/25'
                       : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
                   }`}
                 >
@@ -111,9 +129,139 @@ export const ProPanel: React.FC<ProPanelProps> = ({
           </div>
         </div>
 
+        {/* Manual Image Adjustments (Tune) */}
+        <div className="flex flex-col gap-3 py-1 border-t border-white/10 mt-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Live Picture Tuning</span>
+            <button 
+              onClick={() => {
+                triggerHaptic(settings.haptics, 20);
+                onUpdateSettings({
+                  brightness: 0,
+                  contrast: 0,
+                  saturation: 0,
+                  warmth: 0,
+                  vignette: 0
+                });
+              }}
+              className="text-[10px] text-white/50 hover:text-white flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {/* Brightness */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1 text-white/70">
+                  <SunMedium className="w-3 h-3" /> Brightness
+                </span>
+                <span className="font-mono text-amber-400">{settings.brightness}</span>
+              </div>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={settings.brightness}
+                onChange={(e) => {
+                  triggerHaptic(settings.haptics, 5);
+                  onUpdateSettings({ brightness: parseInt(e.target.value, 10) });
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+
+            {/* Contrast */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1 text-white/70">
+                  <Contrast className="w-3 h-3" /> Contrast
+                </span>
+                <span className="font-mono text-amber-400">{settings.contrast}</span>
+              </div>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={settings.contrast}
+                onChange={(e) => {
+                  triggerHaptic(settings.haptics, 5);
+                  onUpdateSettings({ contrast: parseInt(e.target.value, 10) });
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+
+            {/* Saturation */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1 text-white/70">
+                  <Droplet className="w-3 h-3" /> Saturation
+                </span>
+                <span className="font-mono text-amber-400">{settings.saturation}</span>
+              </div>
+              <input
+                type="range"
+                min="-100"
+                max="100"
+                value={settings.saturation}
+                onChange={(e) => {
+                  triggerHaptic(settings.haptics, 5);
+                  onUpdateSettings({ saturation: parseInt(e.target.value, 10) });
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+
+            {/* Warmth */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1 text-white/70">
+                  <Flame className="w-3 h-3" /> Warmth
+                </span>
+                <span className="font-mono text-amber-400">{settings.warmth}</span>
+              </div>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={settings.warmth}
+                onChange={(e) => {
+                  triggerHaptic(settings.haptics, 5);
+                  onUpdateSettings({ warmth: parseInt(e.target.value, 10) });
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+
+            {/* Vignette */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="flex items-center gap-1 text-white/70">
+                  <CircleDot className="w-3 h-3" /> Vignette
+                </span>
+                <span className="font-mono text-amber-400">{settings.vignette}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.vignette}
+                onChange={(e) => {
+                  triggerHaptic(settings.haptics, 5);
+                  onUpdateSettings({ vignette: parseInt(e.target.value, 10) });
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Camera Sensor Selection (if multiple cameras available) */}
         {devices.length > 1 && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2">
             <span className="text-xs font-medium text-white/80">Camera Lens Selection</span>
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
               {devices.map((device, idx) => {

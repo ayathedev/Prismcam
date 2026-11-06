@@ -1,3 +1,5 @@
+import { applySnapchatBeautyToCanvas } from './filters';
+
 export interface ImageAdjustments {
   brightness: number; // -50 to 50
   contrast: number; // -50 to 50
@@ -10,6 +12,15 @@ export interface ImageAdjustments {
   flipH: boolean;
   flipV: boolean;
   cropAspect: 'original' | '1:1' | '4:3' | '16:9' | '9:16' | '3:2';
+  // Beauty & Retouch adjustments
+  beautySmooth: number; // 0 to 100
+  beautyRosy: number; // 0 to 100
+  beautyGlow: number; // 0 to 100
+  beautyBrighten: number; // 0 to 100
+  beautySlim: number; // 0 to 100
+  beautyEnlargeEye: number; // 0 to 100
+  beautyPortraitDepth: number; // 0 to 100
+  beautyPreset: string; // 'none' | 'natural' | 'rosy' | 'porcelain' | 'golden' | 'glamour' | 'fresh'
 }
 
 export const DEFAULT_ADJUSTMENTS: ImageAdjustments = {
@@ -24,6 +35,14 @@ export const DEFAULT_ADJUSTMENTS: ImageAdjustments = {
   flipH: false,
   flipV: false,
   cropAspect: 'original',
+  beautySmooth: 0,
+  beautyRosy: 0,
+  beautyGlow: 0,
+  beautyBrighten: 0,
+  beautySlim: 0,
+  beautyEnlargeEye: 0,
+  beautyPortraitDepth: 0,
+  beautyPreset: 'none',
 };
 
 export interface FilterPreset {
@@ -40,6 +59,42 @@ export const FILTER_PRESETS: FilterPreset[] = [
     name: 'Original',
     previewColor: '#ffffff',
     adjustments: {},
+  },
+  {
+    id: 'beauty_angel_glow',
+    name: 'Angel Glow',
+    previewColor: '#f472b6',
+    adjustments: { beautySmooth: 65, beautyRosy: 50, beautyGlow: 60, beautyBrighten: 45, beautySlim: 40, beautyEnlargeEye: 45, beautyPortraitDepth: 25 },
+  },
+  {
+    id: 'beauty_glass_skin',
+    name: 'Glass Skin',
+    previewColor: '#e0e7ff',
+    adjustments: { beautySmooth: 75, beautyRosy: 30, beautyGlow: 50, beautyBrighten: 55, beautySlim: 50, beautyEnlargeEye: 30, beautyPortraitDepth: 20 },
+  },
+  {
+    id: 'beauty_paris',
+    name: 'Paris Velvet',
+    previewColor: '#fed7aa',
+    adjustments: { beautySmooth: 70, beautyRosy: 35, beautyGlow: 25, beautyBrighten: 40, beautySlim: 45, beautyEnlargeEye: 35, beautyPortraitDepth: 30 },
+  },
+  {
+    id: 'beauty_blushing_doll',
+    name: 'Blushing Doll',
+    previewColor: '#fb7185',
+    adjustments: { beautySmooth: 60, beautyRosy: 80, beautyGlow: 45, beautyBrighten: 40, beautySlim: 55, beautyEnlargeEye: 65, beautyPortraitDepth: 40 },
+  },
+  {
+    id: 'beauty_soft_honey',
+    name: 'Soft Honey',
+    previewColor: '#fbbf24',
+    adjustments: { beautySmooth: 55, beautyRosy: 45, beautyGlow: 65, beautyBrighten: 35, beautySlim: 35, beautyEnlargeEye: 40, beautyPortraitDepth: 35 },
+  },
+  {
+    id: 'beauty_sunset_kiss',
+    name: 'Sunset Kiss',
+    previewColor: '#f97316',
+    adjustments: { beautySmooth: 50, beautyRosy: 60, beautyGlow: 75, beautyBrighten: 40, beautySlim: 30, beautyEnlargeEye: 45, beautyPortraitDepth: 50 },
   },
   {
     id: 'vivid',
@@ -93,25 +148,31 @@ export const FILTER_PRESETS: FilterPreset[] = [
 ];
 
 /**
- * Build CSS filter string from ImageAdjustments
+ * Build CSS filter string from ImageAdjustments including beauty tuning
  */
 export function buildCssFilterString(adj: ImageAdjustments): string {
-  const brightnessVal = 1 + (adj.brightness + adj.exposure * 0.8) / 100;
-  const contrastVal = 1 + adj.contrast / 100;
-  const saturationVal = Math.max(0, 1 + adj.saturation / 100);
+  // Beauty adjustments contribution
+  const beautyBrighten = (adj.beautyBrighten / 100) * 16;
+  const beautySmoothContrast = -(adj.beautySmooth / 100) * 12;
+  const beautyRosySat = (adj.beautyRosy / 100) * 28 + (adj.beautyGlow / 100) * 10;
+  const beautyRosySepia = (adj.beautyRosy / 100) * 0.12 + (adj.beautyGlow / 100) * 0.08;
+  const beautyHue = -(adj.beautyRosy / 100) * 7;
+
+  const brightnessVal = 1 + (adj.brightness + adj.exposure * 0.8 + beautyBrighten) / 100;
+  const contrastVal = Math.max(0.2, 1 + (adj.contrast + beautySmoothContrast) / 100);
+  const saturationVal = Math.max(0, 1 + (adj.saturation + beautyRosySat) / 100);
 
   let filterStr = `brightness(${brightnessVal.toFixed(2)}) contrast(${contrastVal.toFixed(2)}) saturate(${saturationVal.toFixed(2)})`;
 
-  if (adj.warmth !== 0) {
-    if (adj.warmth > 0) {
-      // Warm: sepia + negative hue-rotate
-      const sepiaAmount = (adj.warmth / 100) * 0.45;
-      filterStr += ` sepia(${sepiaAmount.toFixed(2)}) hue-rotate(-${(adj.warmth * 0.3).toFixed(1)}deg)`;
-    } else {
-      // Cool: hue rotate towards cyan/blue
-      const hueShift = Math.abs(adj.warmth) * 0.4;
-      filterStr += ` hue-rotate(${hueShift.toFixed(1)}deg)`;
-    }
+  const totalSepia = (adj.warmth > 0 ? (adj.warmth / 100) * 0.45 : 0) + beautyRosySepia;
+  if (totalSepia > 0.01) {
+    filterStr += ` sepia(${Math.min(0.8, totalSepia).toFixed(2)})`;
+  }
+
+  const totalHue =
+    (adj.warmth > 0 ? -(adj.warmth * 0.3) : Math.abs(adj.warmth) * 0.4) + beautyHue;
+  if (Math.abs(totalHue) > 0.5) {
+    filterStr += ` hue-rotate(${totalHue.toFixed(1)}deg)`;
   }
 
   // Base preset filter if selected
@@ -227,6 +288,29 @@ export async function renderEditedImageToCanvas(
   );
 
   ctx.restore();
+
+  // Apply full Snapchat multi-pass beauty engine (skin smoothing, angel bloom, blush, clarity)
+  if (
+    adjustments.beautySmooth > 0 ||
+    adjustments.beautyRosy > 0 ||
+    adjustments.beautyGlow > 0 ||
+    adjustments.beautyBrighten > 0 ||
+    adjustments.beautySlim > 0 ||
+    adjustments.beautyEnlargeEye > 0 ||
+    adjustments.beautyPortraitDepth > 0
+  ) {
+    applySnapchatBeautyToCanvas(canvas, {
+      enabled: true,
+      preset: (adjustments.beautyPreset as any) || 'custom',
+      smoothLevel: adjustments.beautySmooth,
+      rosyLevel: adjustments.beautyRosy,
+      glowLevel: adjustments.beautyGlow,
+      brightenLevel: adjustments.beautyBrighten,
+      slimLevel: adjustments.beautySlim,
+      enlargeEyeLevel: adjustments.beautyEnlargeEye,
+      portraitDepthLevel: adjustments.beautyPortraitDepth,
+    });
+  }
 
   // Apply Vignette effect if requested
   if (adjustments.vignette > 0) {
